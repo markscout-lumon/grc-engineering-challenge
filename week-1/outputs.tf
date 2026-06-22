@@ -17,7 +17,3 @@ output "sse_algo" {
   description = "Sever Side Encryption algorithm"
   value       = tolist(tolist(aws_s3_bucket_server_side_encryption_configuration.primary.rule)[0].apply_server_side_encryption_by_default)[0].sse_algorithm
 }
-
-# TODO (SC-28 attestation): once you add the encryption configuration, add an
-# output that surfaces the algorithm in effect (for example "AES256"). This is
-# your machine-readable proof of encryption at rest.
