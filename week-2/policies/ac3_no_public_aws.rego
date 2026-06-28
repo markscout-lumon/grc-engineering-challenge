@@ -10,7 +10,7 @@ package compliance.ac3_aws
 
 import rego.v1
 
-# TODO (your build): deny any aws_s3_bucket that does not have a matching
+# YOUR BUILD: deny any aws_s3_bucket that does not have a matching
 # aws_s3_bucket_public_access_block with block_public_acls, block_public_policy,
 # ignore_public_acls, and restrict_public_buckets all set to true.
 #
@@ -19,8 +19,35 @@ import rego.v1
 # Read the four flag values from input.planned_values.root_module.resources[]
 # where .address is the public access block's address.
 #
-# The stub below keeps `deny` defined (empty) so the test file loads. Replace it.
+# Deny any bucket that has no public access block .
 deny contains msg if {
-	false
-	msg := "todo"
+	some bucket in input.configuration.root_module.resources
+	bucket.type == "aws_s3_bucket"
+
+	addr := sprintf("aws_s3_bucket.%s", [bucket.name])
+
+	not bucket_public_access_blocked(addr)
+
+	msg := sprintf("AC-3: %s public access block not configured correctly.", [addr])
+}
+
+# True if public access blocked on all four flags.
+bucket_public_access_blocked(addr) if {
+	# Step 1: find a PAB in configuration that references this bucket
+	some pab in input.configuration.root_module.resources
+	pab.type == "aws_s3_bucket_public_access_block"                         
+	some ref in pab.expressions.bucket.references
+	startswith(ref, addr)
+	pab_addr := sprintf("aws_s3_bucket_public_access_block.%s", [pab.name])
+
+	# Step 2: find that same PAB in planned_values and read its flags
+	some pv in input.planned_values.root_module.resources
+	pv.address == pab_addr
+	v := pv.values
+
+	# Step 3: all four flags must be true
+	v.block_public_acls == true
+	v.block_public_policy == true
+	v.ignore_public_acls == true
+	v.restrict_public_buckets == true
 }

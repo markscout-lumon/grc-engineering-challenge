@@ -18,9 +18,22 @@ import rego.v1
 # (type == "aws_s3_bucket"). The encryption resource references its bucket in
 # .expressions.bucket.references (strings like "aws_s3_bucket.primary.id").
 #
-# Make the two tests in sc28_encryption_aws_test.rego pass. The stub below keeps
-# `deny` defined so the tests load. Replace it.
+# Deny any bucket that has no encryption configuration pointing at it.
 deny contains msg if {
-	false
-	msg := "todo"
+	some bucket in input.configuration.root_module.resources
+	bucket.type == "aws_s3_bucket"
+
+	addr := sprintf("aws_s3_bucket.%s", [bucket.name])
+
+	not bucket_has_encryption(addr)
+
+	msg := sprintf("SC-28: %s has no server-side encryption configuration", [addr])
+}
+
+# True if some encryption resource references this bucket's address.
+bucket_has_encryption(addr) if {
+	some enc in input.configuration.root_module.resources
+	enc.type == "aws_s3_bucket_server_side_encryption_configuration"
+	some ref in enc.expressions.bucket.references
+	startswith(ref, addr)
 }
