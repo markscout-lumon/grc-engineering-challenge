@@ -2,3 +2,4 @@
 5 week challenge in the GRC engineering Patreon community
 
 # week-1 "Your First Compliant Resource"
+# week-2 "Make the Rules Executable"
